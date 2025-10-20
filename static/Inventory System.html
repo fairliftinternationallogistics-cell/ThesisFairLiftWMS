@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Add Parcel — FairLift</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --muted:#9aa4b2; --accent:#06b6d4;
+      --glass: rgba(255,255,255,0.03);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    body{margin:0; background:linear-gradient(180deg,#071029,#071827); color:#e6eef6;}
+    .container{max-width:700px; margin:40px auto; padding:24px;}
+    h1{margin:0 0 12px;}
+    p{margin:0 0 24px; color:var(--muted);}
+    form{background:var(--card); padding:20px; border-radius:12px; box-shadow:0 6px 24px rgba(2,6,23,0.6);}
+    label{display:block; margin-bottom:6px; font-size:13px; color:var(--muted);}
+    input,select,textarea{
+      width:100%; padding:10px; border:1px solid rgba(255,255,255,0.08);
+      border-radius:8px; background:var(--glass); color:#e6eef6; font-size:14px;
+    }
+    textarea{resize:vertical; min-height:80px;}
+    .row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px;}
+    .col{flex:1; min-width:220px;}
+    .actions{margin-top:20px; display:flex; justify-content:flex-end; gap:12px;}
+    button{
+      padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; border:0;
+    }
+    .btn{background:linear-gradient(90deg,var(--accent), #38bdf8); color:#021325;}
+    .ghost{background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted);}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Add Parcel</h1>
+    <p>Fill out the form to register a new parcel into the FairLift warehouse system.</p>
+
+    <form id="parcelForm">
+      <div class="row">
+        <div class="col">
+          <label for="tracking_number">Tracking Number</label>
+          <input type="text" id="tracking_number" name="tracking_number" required />
+        </div>
+        <div class="col">
+          <label for="size">Size</label>
+          <select id="size" name="size" required>
+            <option value="">Select...</option>
+            <option>S</option>
+            <option>M</option>
+            <option>L</option>
+            <option>XL</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="weight">Weight (kg)</label>
+          <input type="number" step="0.01" id="weight" name="weight" required />
+        </div>
+        <div class="col">
+          <label for="arrival_date">Arrival Date</label>
+          <input type="date" id="arrival_date" name="arrival_date" required />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="destination">Destination</label>
+          <input type="text" id="destination" name="destination" required />
+        </div>
+        <div class="col">
+          <label for="location_rack">Location Rack</label>
+          <input type="text" id="location_rack" name="location_rack" placeholder="e.g., R1" required />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="status">Status</label>
+          <select id="status" name="status" required>
+            <option value="">Select...</option>
+            <option value="stored">Stored</option>
+            <option value="pending">Pending</option>
+            <option value="shipped">Shipped</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col" style="flex:1 0 100%">
+          <label for="metadata">Notes / Metadata</label>
+          <textarea id="metadata" name="metadata" placeholder="e.g., fragile, insurance required"></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="reset" class="ghost">Reset</button>
+        <button type="submit" class="btn">Save Parcel</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('parcelForm');
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.id = Date.now().toString();
+      alert('Parcel added: ' + JSON.stringify(data, null, 2));
+      form.reset();
+    });
+  </script>
+</body>
+</html>

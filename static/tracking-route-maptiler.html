@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FairLift — Live Tracking</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root { --accent: #A3001E; }
+    body { margin: 0; font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 230px; background: var(--accent); color: #fff; display: flex; flex-direction: column; height: 100vh; position: fixed; top: 0; left: 0; padding: 25px 15px; }
+    .sidebar h2 { text-align: center; font-size: 20px; font-weight: 700; letter-spacing: 1px; margin-bottom: 25px; }
+    .nav-link { color: #fff; display: flex; align-items: center; padding: 12px 14px; border-radius: 8px; margin: 5px 0; font-weight: 500; text-decoration: none; transition: 0.25s; }
+    .nav-link i { margin-right: 12px; font-size: 1.1rem; }
+    .nav-link:hover { background: rgba(255,255,255,0.12); transform: translateX(3px); }
+    .nav-link.active { background: #fff; color: var(--accent); font-weight: 600; }
+    .spacer { flex-grow: 1; }
+    .logout { background: rgba(255,255,255,0.12); text-align: center; padding: 10px; border-radius: 6px; color: #fff; text-decoration: none; transition: 0.2s; }
+    .logout:hover { background: rgba(255,255,255,0.2); }
+
+    .main { margin-left: 230px; display: flex; height: 100vh; width: calc(100% - 230px); }
+    #map { flex: 1; width: 100%; height: 100vh; min-height: 500px; background: #ddd; }
+    .panel { width: 380px; padding: 18px; background: #fff; border-left: 1px solid #eee; overflow: auto; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+    .btn.secondary { background: #555; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>FAIRLIFT</h2>
+    <a href="#" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="#" class="nav-link"><i class="bi bi-calendar3"></i> Calendar</a>
+    <a href="#" class="nav-link"><i class="bi bi-box-seam"></i> Warehouse</a>
+    <a href="#" class="nav-link active"><i class="bi bi-truck"></i> Live Tracking</a>
+    <a href="#" class="nav-link"><i class="bi bi-plus-circle"></i> Add Parcel</a>
+    <a href="#" class="nav-link"><i class="bi bi-gear"></i> Settings</a>
+    <div class="spacer"></div>
+    <a href="#" class="logout"><i class="bi bi-house-door"></i> Home</a>
+  </nav>
+
+  <div class="main">
+    <div id="map"></div>
+    <div class="panel">
+      <h3>Auto Tracker</h3>
+      <p>Enter tracking number or click Auto-Load for latest stored parcel.</p>
+      <input id="trackingInput" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-top:8px;" placeholder="e.g. FL-2025-001">
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="trackBtn" class="btn">Track</button>
+        <button id="autoBtn" class="btn secondary">Auto-Load</button>
+      </div>
+
+      <div id="parcelCard" style="display:none;margin-top:12px;">
+        <h4 id="pn">Tracking: --</h4>
+        <div><strong>From:</strong> <span id="fromText">--</span></div>
+        <div><strong>To:</strong> <span id="toText">--</span></div>
+        <div style="margin-top:8px;"><strong>Status:</strong> <span id="statusText">--</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const MAPTILER_KEY = "LYrqvcgKxgR314TOr230";
+    const map = L.map('map').setView([14.4665, 120.9924], 12);
+
+    // Map tiles
+    L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, {
+      attribution: '&copy; OpenStreetMap &copy; MapTiler'
+    }).addTo(map);
+
+    let routeLayer = null;
+    let markers = [];
+    let truckMarker = null;
+    let truckInterval = null;
+
+    // Dummy parcels
+    const parcels = [
+      { tracking_number: "FL-2025-001", destination: "Makati, Metro Manila, Philippines", status: "In Transit" },
+      { tracking_number: "FL-2025-002", destination: "Taguig, Metro Manila, Philippines", status: "Stored" },
+      { tracking_number: "FL-2025-003", destination: "Pasig, Metro Manila, Philippines", status: "Delivered" }
+    ];
+
+    async function getCoords(address) {
+      const res = await fetch(`https://api.maptiler.com/geocoding/${encodeURIComponent(address)}.json?key=${MAPTILER_KEY}`);
+      const data = await res.json();
+      if (!data.features || !data.features.length) throw new Error("Address not found: " + address);
+      return data.features[0].geometry.coordinates; // [lng, lat]
+    }
+
+    async function drawRoute(fromAddress, toAddress) {
+      try {
+        const [fromLng, fromLat] = await getCoords(fromAddress);
+        const [toLng, toLat] = await getCoords(toAddress);
+
+        let routeGeo = null;
+
+        // Try OSRM first
+        try {
+          const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
+          const routeRes = await fetch(osrmUrl);
+          const routeData = await routeRes.json();
+          if (!routeData.routes || !routeData.routes.length) throw new Error("No OSRM route");
+          routeGeo = routeData.routes[0].geometry;
+        } catch (err) {
+          console.warn("OSRM failed, using straight line fallback:", err);
+          routeGeo = { type: "LineString", coordinates: [[fromLng, fromLat], [toLng, toLat]] };
+        }
+
+        // Clear previous
+        if (routeLayer) map.removeLayer(routeLayer);
+        markers.forEach(m => map.removeLayer(m));
+        if (truckMarker) map.removeLayer(truckMarker);
+        clearInterval(truckInterval);
+        markers = [];
+
+        // Draw route
+        routeLayer = L.geoJSON(routeGeo, {
+          style: { color: '#A3001E', weight: 5, dashArray: '5,5' }
+        }).addTo(map);
+        map.fitBounds(routeLayer.getBounds());
+
+        // Markers
+        const fromMarker = L.marker([fromLat, fromLng]).addTo(map).bindPopup("FairLift Warehouse, Las Piñas");
+        const toMarker = L.marker([toLat, toLng]).addTo(map).bindPopup("Destination: " + toAddress);
+        markers.push(fromMarker, toMarker);
+
+        // Truck animation
+        const coords = routeGeo.coordinates.map(c => [c[1], c[0]]);
+        truckMarker = L.marker(coords[0], {
+          icon: L.icon({ iconUrl: 'truck_icon.png', iconSize: [38, 38], iconAnchor: [19, 19] })
+        }).addTo(map).bindPopup("Truck");
+
+        let index = 0;
+        truckInterval = setInterval(() => {
+          index++;
+          if (index >= coords.length) clearInterval(truckInterval);
+          else truckMarker.setLatLng(coords[index]);
+        }, 200);
+
+      } catch (err) {
+        console.error("Draw route error:", err);
+        alert("Unable to display route. Check console.");
+      }
+    }
+
+    document.getElementById('trackBtn').addEventListener('click', async () => {
+      const tn = document.getElementById('trackingInput').value.trim();
+      const p = parcels.find(x => x.tracking_number === tn);
+      if (!p) return alert("Parcel not found");
+
+      document.getElementById('parcelCard').style.display = 'block';
+      document.getElementById('pn').textContent = 'Tracking: ' + p.tracking_number;
+      document.getElementById('fromText').textContent = 'FairLift Warehouse';
+      document.getElementById('toText').textContent = p.destination;
+      document.getElementById('statusText').textContent = p.status;
+
+      await drawRoute('Las Piñas, Metro Manila, Philippines', p.destination);
+    });
+
+    document.getElementById('autoBtn').addEventListener('click', async () => {
+      const p = parcels[0]; // Latest stored parcel
+      document.getElementById('trackingInput').value = p.tracking_number;
+      document.getElementById('parcelCard').style.display = 'block';
+      document.getElementById('pn').textContent = 'Tracking: ' + p.tracking_number;
+      document.getElementById('fromText').textContent = 'FairLift Warehouse';
+      document.getElementById('toText').textContent = p.destination;
+      document.getElementById('statusText').textContent = p.status;
+
+      await drawRoute('Las Piñas, Metro Manila, Philippines', p.destination);
+    });
+  </script>
+</body>
+</html>

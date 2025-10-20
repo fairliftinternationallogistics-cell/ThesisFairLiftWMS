@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FairLift — Warehouse</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --accent: #A3001E; --bg:#ffffff; --card:#fafafa; --muted:#666; font-family: 'Inter', sans-serif; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:0; height:100%; background:var(--bg); color:#222; font-family:'Inter',sans-serif; display:flex; }
+    /* Sidebar */
+    .sidebar { width:230px; background:var(--accent); color:#fff; display:flex; flex-direction:column; height:100vh; position:fixed; top:0; left:0; padding:25px 15px; box-shadow:2px 0 8px rgba(0,0,0,0.15); }
+    .sidebar h2 { font-size:20px; font-weight:700; letter-spacing:1px; margin-bottom:25px; text-transform:uppercase; color:#fff; text-align:center; }
+    .nav-link { color:#fff; display:flex; align-items:center; padding:12px 14px; border-radius:8px; margin:5px 0; font-weight:500; text-decoration:none; transition:0.25s; }
+    .nav-link i { margin-right:12px; font-size:1.1rem; }
+    .nav-link:hover { background:rgba(255,255,255,0.12); transform:translateX(3px); }
+    .nav-link.active { background:#fff; color:var(--accent); font-weight:600; }
+    .spacer { flex-grow:1; }
+    .logout { background:rgba(255,255,255,0.12); text-align:center; padding:10px; border-radius:6px; color:#fff; text-decoration:none; transition:0.2s; }
+    .logout:hover { background:rgba(255,255,255,0.2); }
+    /* Main */
+    .main { margin-left:230px; flex-grow:1; display:flex; flex-direction:column; min-height:100vh; background:#fff; }
+    header { background:white; padding:20px 30px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; }
+    header h1 { margin:0; color:var(--accent); font-size:20px; }
+    .card { background:white; border-radius:10px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+    footer { text-align:center; color:#777; padding:10px; font-size:13px; }
+    .btn { background:var(--accent); color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:13px; }
+    .ghost { background:white; border:1px solid #ccc; color:#333; padding:6px 10px; border-radius:6px; cursor:pointer; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:8px; border-bottom:1px solid #eee; }
+    th { text-align:left; background:#f9f9f9; }
+    tr:hover { background:#f5f5f5; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>FAIRLIFT</h2>
+    <a href="/static/DashBoard.html" class="nav-link" id="nav-dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="/static/Calendar.html" class="nav-link" id="nav-calendar"><i class="bi bi-calendar3"></i> Calendar</a>
+    <a href="/static/warehouse.html" class="nav-link" id="nav-warehouse"><i class="bi bi-box-seam"></i> Warehouse</a>
+    <a href="/static/tracking_live_auto.html" class="nav-link" id="nav-tracking"><i class="bi bi-truck"></i> Live Tracking</a>
+    <a href="/static/add_parcel.html" class="nav-link" id="nav-addparcel"><i class="bi bi-plus-circle"></i> Add Parcel</a>
+    <a href="/static/settings.html" class="nav-link" id="nav-settings"><i class="bi bi-gear"></i> Settings</a>
+    <div class="spacer"></div>
+    <a href="/static/Login.html" class="logout"><i class="bi bi-house-door"></i> Home</a>
+  </nav>
+
+  <div class="main">
+    <header>
+      <div>
+        <h1>Warehouse Monitoring</h1>
+        <p style="margin:0;color:#666;font-size:13px;">View and manage all stored parcels.</p>
+      </div>
+      <div class="table-actions">
+        <button id="addParcelBtn" class="btn">Add Parcel</button>
+      </div>
+    </header>
+
+    <div style="padding:24px;">
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking #</th>
+              <th>Size</th>
+              <th>Weight</th>
+              <th>Arrival</th>
+              <th>Destination</th>
+              <th>Status</th>
+              <th>Location</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer>© 2025 FairLift International Logistics</footer>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="modal" style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+    <div style="background:white;padding:18px;border-radius:8px;width:500px;">
+      <div style="display:flex;justify-content:space-between;">
+        <h3>Edit Parcel</h3>
+        <button id="closeModal" class="ghost">Close</button>
+      </div>
+      <div style="margin-top:10px;">
+        <input type="hidden" id="editId">
+        <label>Destination</label>
+        <input id="editDestination" class="ghost" style="width:100%;margin-bottom:6px;">
+        <label>Status</label>
+        <select id="editStatus" class="ghost" style="width:100%;margin-bottom:6px;">
+          <option value="stored">Stored</option>
+          <option value="pending">Pending</option>        
+          <option value="shipped">Shipped</option>
+        </select>
+        <label>Location Rack</label>
+        <input id="editRack" class="ghost" style="width:100%;">
+      </div>
+      <div style="margin-top:12px;text-align:right;">
+        <button id="saveChanges" class="btn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  async function loadParcels() {
+    const response = await fetch("/api/parcels", { credentials: 'include' });
+    const data = await response.json();
+    renderTable(data);
+  }
+
+  function renderTable(items) {
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+    items.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.tracking_number||''}</td>
+        <td>${p.size||''}</td>
+        <td>${p.weight||''}</td>
+        <td>${p.arrival_date||''}</td>
+        <td>${p.destination||''}</td>
+        <td>${p.status||''}</td>
+        <td>${p.location_rack||''}</td>
+        <td>
+          <button class="btn" style="background:#0078d7" onclick="openEdit(${p.id}, '${p.destination||''}', '${p.status||''}', '${p.location_rack||''}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn" style="background:#d9534f" onclick="deleteParcel(${p.id})"><i class="bi bi-trash"></i></button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  function openEdit(id, dest, status, rack) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editDestination').value = dest;
+    document.getElementById('editStatus').value = status;
+    document.getElementById('editRack').value = rack;
+    document.getElementById('modal').style.display = 'flex';
+  }
+
+  document.getElementById('closeModal').onclick = () => document.getElementById('modal').style.display = 'none';
+
+  document.getElementById('saveChanges').onclick = async () => {
+    const id = document.getElementById('editId').value;
+    const payload = {
+      destination: document.getElementById('editDestination').value,
+      status: document.getElementById('editStatus').value,
+      location_rack: document.getElementById('editRack').value
+    };
+    const res = await fetch(`/api/parcels/${id}`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body:JSON.stringify(payload)
+    });
+    if(res.ok){
+      alert('Parcel updated successfully!');
+      document.getElementById('modal').style.display = 'none';
+      loadParcels();
+    } else {
+      alert('Failed to update parcel');
+    }
+  };
+
+  async function deleteParcel(id) {
+    if(!confirm('Delete this parcel?')) return;
+    const res = await fetch(`/api/parcels/${id}`, { method:'DELETE', credentials:'include' });
+    if(res.ok){
+      alert('Parcel deleted!');
+      loadParcels();
+    } else {
+      alert('Failed to delete parcel');
+    }
+  }
+
+  document.getElementById('addParcelBtn').onclick = () => window.location.href = '/static/add_parcel.html';
+
+  // Highlight active nav link
+  (function setActiveNav(){
+    try {
+      const path = window.location.pathname;
+      if(path.includes('warehouse')) document.getElementById('nav-warehouse').classList.add('active');
+    } catch(e){}
+  })();
+
+  loadParcels();
+  </script>
+</body>
+</html>

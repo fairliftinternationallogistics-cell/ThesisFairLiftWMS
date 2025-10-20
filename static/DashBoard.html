@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FairLift — Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --accent: #A3001E; --bg:#ffffff; --card:#fafafa; --muted:#666; font-family: 'Inter', sans-serif; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:0; height:100%; background:var(--bg); color:#222; font-family:'Inter',sans-serif; display:flex; }
+    .sidebar { width:230px; background:var(--accent); color:#fff; display:flex; flex-direction:column; height:100vh; position:fixed; top:0; left:0; padding:25px 15px; box-shadow:2px 0 8px rgba(0,0,0,0.15); }
+    .sidebar h2 { font-size:20px; font-weight:700; letter-spacing:1px; margin-bottom:25px; text-transform:uppercase; color:#fff; text-align:center; }
+    .nav-link { color:#fff; display:flex; align-items:center; padding:12px 14px; border-radius:8px; margin:5px 0; font-weight:500; text-decoration:none; transition:0.25s; }
+    .nav-link i { margin-right:12px; font-size:1.1rem; }
+    .nav-link:hover { background:rgba(255,255,255,0.12); transform:translateX(3px); }
+    .nav-link.active { background:#fff; color:var(--accent); font-weight:600; }
+    .spacer { flex-grow:1; }
+    .logout { background:rgba(255,255,255,0.12); text-align:center; padding:10px; border-radius:6px; color:#fff; text-decoration:none; transition:0.2s; }
+    .logout:hover { background:rgba(255,255,255,0.2); }
+    .main { margin-left:230px; flex-grow:1; display:flex; flex-direction:column; min-height:100vh; background:#fff; }
+    header { background:white; padding:20px 30px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; }
+    header h1 { margin:0; color:var(--accent); font-size:20px; }
+    .card { background:white; border-radius:10px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+    footer { text-align:center; color:#777; padding:10px; font-size:13px; }
+    .btn { background:var(--accent); color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:14px; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
+    .stat-card { padding:18px; border-radius:8px; background:var(--card); box-shadow:0 6px 18px rgba(0,0,0,0.04); }
+    .stat-value { font-size:26px; font-weight:700; color:var(--accent); }
+  </style>
+</head>
+<body>
+<nav class="sidebar">
+  <h2>FAIRLIFT</h2>
+  <a href="/static/DashBoard.html" class="nav-link" id="nav-dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  <a href="/static/Calendar.html" class="nav-link" id="nav-calendar"><i class="bi bi-calendar3"></i> Calendar</a>
+  <a href="/static/warehouse.html" class="nav-link" id="nav-warehouse"><i class="bi bi-box-seam"></i> Warehouse</a>
+  <a href="/static/tracking_live_auto.html" class="nav-link" id="nav-tracking"><i class="bi bi-truck"></i> Live Tracking</a>
+  <a href="/static/add_parcel.html" class="nav-link" id="nav-addparcel"><i class="bi bi-plus-circle"></i> Add Parcel</a>
+  <a href="/static/settings.html" class="nav-link" id="nav-settings"><i class="bi bi-gear"></i> Settings</a>
+  <div class="spacer"></div>
+  <a href="/static/Login.html" class="logout"><i class="bi bi-house-door"></i> Home</a>
+</nav>
+
+<div class="main">
+  <header><h1>Warehouse Dashboard</h1></header>
+
+  <div style="padding:24px;">
+    <div class="stats-grid" style="margin-bottom:18px;">
+      <div class="stat-card card">
+        <div>Total Parcels</div>
+        <div class="stat-value" id="totalParcels">0</div>
+      </div>
+      <div class="stat-card card">
+        <div>Stored</div>
+        <div class="stat-value" id="storedParcels">0</div>
+      </div>
+      <div class="stat-card card">
+        <div>Pending</div>
+        <div class="stat-value" id="pendingParcels">0</div>
+      </div>
+      <div class="stat-card card">
+        <div>Shipped</div>
+        <div class="stat-value" id="shippedParcels">0</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px;">
+      <h3 style="margin-top:0">Parcels by Status</h3>
+      <div style="height:280px;">
+        <canvas id="statusBarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <footer>© 2025 FairLift International Logistics</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let chart = null;
+
+async function fetchAndRender() {
+  try {
+    const res = await fetch('/api/parcels', { credentials: 'include' });
+    if (!res.ok) {
+      console.error('Failed to fetch parcels', await res.text());
+      return;
+    }
+
+    const parcels = await res.json();
+
+    const total = parcels.length;
+    const counts = parcels.reduce((acc, p) => {
+      const status = (p.status || 'unknown').toLowerCase();
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const stored = counts['stored'] || 0;
+    const pending = counts['pending'] || 0;
+    const shipped = counts['shipped'] || 0;
+
+    document.getElementById('totalParcels').textContent = total;
+    document.getElementById('storedParcels').textContent = stored;
+    document.getElementById('pendingParcels').textContent = pending;
+    document.getElementById('shippedParcels').textContent = shipped;
+
+    const ctx = document.getElementById('statusBarChart').getContext('2d');
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Stored', 'Pending', 'Shipped'],
+        datasets: [{
+          label: 'Parcels',
+          data: [stored, pending, shipped],
+          backgroundColor: ['#6da8d6', '#f1c40f', '#2ecc71'],
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 800, easing: 'easeOutQuart' },
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 }, grid: { color: '#eee' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('Chart render error:', err);
+  }
+}
+
+fetchAndRender();
+setInterval(fetchAndRender, 30000);
+
+(function setActiveNav(){
+  try {
+    if (window.location.pathname.includes('DashBoard'))
+      document.getElementById('nav-dashboard').classList.add('active');
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FairLift — Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --accent:#A3001E; font-family:'Inter',sans-serif; }
+    body{margin:0;background:#fafafa;font-family:Inter, sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;}
+    .login-card{width:420px;background:white;border-radius:10px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,0.08);}
+    h2{color:var(--accent);margin-bottom:12px;}
+    label{display:block;margin-top:8px;font-weight:600;}
+    input{width:100%;padding:10px;margin-top:6px;border:1px solid #ddd;border-radius:8px;font-size:14px;}
+    button{margin-top:16px;padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:white;font-weight:700;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h2>FAIRLIFT Admin Login</h2>
+    <form id="loginForm">
+      <label>Username</label>
+      <input type="text" id="username" required>
+      <label>Password</label>
+      <input type="password" id="password" required>
+      <div style="display:flex;align-items:center;margin-top:10px;">
+        <input type="checkbox" id="remember" style="margin-right:8px;"><label for="remember"> Remember</label>
+      </div>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e){ 
+  e.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username,password}), credentials: 'include' });
+  const data = await res.json();
+  if (res.ok && data.message) {
+    window.location.href = '/static/DashBoard.html';
+  } else {
+    alert(data.error || 'Login failed');
+  }
+});
+</script>
+</body>
+</html>
