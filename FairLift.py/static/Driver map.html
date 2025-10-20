@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIRLIFT Tracking Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      background: #f7f8fa;
+      color: #333;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1px solid #ddd;
+      height: 100vh;
+      padding: 20px;
+      position: fixed;
+    }
+    .sidebar h2 {
+      color: #a8002f;
+      margin-bottom: 20px;
+      font-size: 18px;
+      text-align: center;
+    }
+    .sidebar ul {
+      list-style: none;
+    }
+    .sidebar ul li {
+      padding: 10px;
+      margin: 5px 0;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .sidebar ul li:hover {
+      background: #f0f0f0;
+    }
+
+    /* Main content */
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      padding: 20px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .card {
+      flex: 1;
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    .card h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .card p {
+      font-size: 22px;
+      font-weight: bold;
+      color: #a8002f;
+    }
+
+    /* Shipping table */
+    .shipping-list {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+    th {
+      background: #f9f9f9;
+    }
+    a.track-link {
+      color: #a8002f;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    /* Right details panel */
+    .details-panel {
+      width: 320px;
+      background: #fff;
+      border-left: 1px solid #ddd;
+      padding: 20px;
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .details-panel h3 {
+      margin-bottom: 10px;
+      color: #a8002f;
+    }
+    .map {
+      background: #eee;
+      height: 150px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+    }
+    .status-timeline {
+      margin-top: 15px;
+    }
+    .status-timeline ul {
+      list-style: none;
+    }
+    .status-timeline ul li {
+      margin-bottom: 15px;
+      position: relative;
+      padding-left: 20px;
+    }
+    .status-timeline ul li:before {
+      content: "●";
+      position: absolute;
+      left: 0;
+      color: #a8002f;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>FAIRLIFT</h2>
+    <ul>
+      <li>Dashboard</li>
+      <li>Tracking</li>
+      <li>Orders</li>
+      <li>Reports</li>
+      <li>Settings</li>
+      <li>Help Center</li>
+    </ul>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+    <h2>Tracking / Road Freight</h2>
+
+    <!-- Cards -->
+    <div class="cards">
+      <div class="card">
+        <h3>Total Shipment</h3>
+        <p>26,666</p>
+      </div>
+      <div class="card">
+        <h3>On Delivery</h3>
+        <p>6,500</p>
+      </div>
+      <div class="card">
+        <h3>In Transit</h3>
+        <p>5,000</p>
+      </div>
+      <div class="card">
+        <h3>Pending</h3>
+        <p>102</p>
+      </div>
+    </div>
+
+    <!-- Shipping List -->
+    <div class="shipping-list">
+      <h3>Shipping List</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Track Number</th>
+            <th>Customer</th>
+            <th>Carrier</th>
+            <th>Shipped Date</th>
+            <th>Place of Discharge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a class="track-link" href="#">#JK982QW80</a></td>
+            <td>Rifzt Zulfan</td>
+            <td>Budi Sudarsono</td>
+            <td>Mon, 17 June 2024</td>
+            <td>Surabaya, Indonesia</td>
+          </tr>
+          <tr>
+            <td><a class="track-link" href="#">#PB002S99</a></td>
+            <td>Nurul Fitriani</td>
+            <td>Alvaro Morata</td>
+            <td>Tue, 18 June 2024</td>
+            <td>Malang, Indonesia</td>
+          </tr>
+          <tr>
+            <td><a class="track-link" href="#">#H762YF69</a></td>
+            <td>Fridolina Friena</td>
+            <td>Kurnia Meiga</td>
+            <td>Wed, 19 June 2024</td>
+            <td>Denpasar, Indonesia</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Right details panel -->
+  <div class="details-panel">
+    <h3>Shipment #JK982QW80</h3>
+    <div class="map">[Map Placeholder]</div>
+    <p><strong>Shipped Date:</strong> Mon, 17 June 2024</p>
+    <p><strong>Place of Discharge:</strong> Surabaya, Indonesia</p>
+    <p><strong>Customer:</strong> Rifzt Zulfan</p>
+
+    <div class="status-timeline">
+      <h4>Shipment Status</h4>
+      <ul>
+        <li>Order received and processing for packaging</li>
+        <li>Package left Surabaya warehouse</li>
+        <li>Shipment in transit to Malang</li>
+        <li>Delivered to recipient</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>
