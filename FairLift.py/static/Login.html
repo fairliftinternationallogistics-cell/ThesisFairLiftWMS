@@ -17,27 +17,48 @@
 </head>
 <body>
   <div class="login-card">
-    <h2>FAIRLIFT Admin Login</h2>
+    <h2>FAIRLIFT Login</h2>
     <form id="loginForm">
       <label>Username</label>
       <input type="text" id="username" required>
       <label>Password</label>
       <input type="password" id="password" required>
       <div style="display:flex;align-items:center;margin-top:10px;">
-        <input type="checkbox" id="remember" style="margin-right:8px;"><label for="remember"> Remember</label>
+        <input type="checkbox" id="remember" style="margin-right:8px;">
+        <label for="remember">Remember</label>
       </div>
       <button type="submit">Login</button>
     </form>
   </div>
+
 <script>
 document.getElementById('loginForm').addEventListener('submit', async function(e){ 
   e.preventDefault();
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username,password}), credentials: 'include' });
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  const res = await fetch('/api/login', { 
+    method: 'POST', 
+    headers: {'Content-Type':'application/json'}, 
+    body: JSON.stringify({username, password}), 
+    credentials: 'include' 
+  });
+
   const data = await res.json();
+
   if (res.ok && data.message) {
-    window.location.href = '/static/DashBoard.html';
+    // Save user info for later use
+    localStorage.setItem("user", JSON.stringify(data));
+
+    // Redirect based on role
+    if (data.role === "admin") {
+      window.location.href = '/static/DashBoard.html';
+    } else if (data.role === "driver") {
+      window.location.href = '/static/driver-dashboard.html';
+    } else {
+      alert("Unknown user role. Please contact admin.");
+    }
   } else {
     alert(data.error || 'Login failed');
   }

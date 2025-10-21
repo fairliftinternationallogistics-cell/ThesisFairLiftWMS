@@ -68,7 +68,13 @@ def api_login():
 def api_logout():
     logout_user()
     return jsonify({"message": "Logged out"})
-
+@app.route('/api/user/info', methods=['GET'])
+@login_required
+def user_info():
+    return jsonify({
+        "username": current_user.username,
+        "role": current_user.role
+    })
 
 # --- PARCELS API ---
 @app.route('/api/parcels', methods=['GET'])
@@ -181,23 +187,7 @@ def update_parcel(parcel_id):
 
     db.session.commit()
     return jsonify({"message": "Parcel updated successfully", "id": p.id})
-@app.route('/api/parcels/tracking/<tracking_number>', methods=['GET'])
-@login_required
-def get_parcel_by_tracking(tracking_number):
-    p = Parcel.query.filter_by(tracking_number=tracking_number).first()
-    if not p:
-        return jsonify({"error": "Parcel not found"}), 404
-    return jsonify({
-        "id": p.id,
-        "tracking_number": p.tracking_number,
-        "size": p.size,
-        "weight": p.weight,
-        "arrival_date": p.arrival_date.isoformat() if p.arrival_date else None,
-        "destination": p.destination,
-        "status": p.status,
-        "location_rack": p.location_rack,
-        "metadata": p.metadata if isinstance(p.metadata, dict) else {}
-    })
+
 
 @app.route('/api/parcels/<int:parcel_id>', methods=['DELETE'])
 @login_required
@@ -206,8 +196,42 @@ def delete_parcel(parcel_id):
     db.session.delete(p)
     db.session.commit()
     return jsonify({"message": "deleted"})
+# --- Get parcel by tracking number (unique endpoint name) ---
+# Fetch parcel by numeric ID
+@app.route('/api/parcels/id/<int:parcel_id>', methods=['GET'])
+@login_required
+def get_parcel_by_id(parcel_id):
+    parcel = Parcel.query.get_or_404(parcel_id)
+    return jsonify({
+        "id": parcel.id,
+        "tracking_number": parcel.tracking_number,
+        "destination": parcel.destination,
+        "status": parcel.status,
+        "size": parcel.size,
+        "weight": parcel.weight,
+        "arrival_date": parcel.arrival_date.isoformat() if parcel.arrival_date else None,
+        "location_rack": parcel.location_rack,
+        "metadata": parcel.metadata if isinstance(parcel.metadata, dict) else {}
+    })
+# Fetch parcel by tracking number (string)
+@app.route('/api/parcels/<tracking_number>', methods=['GET'])
+@login_required
+def get_parcel_by_tracking(tracking_number):
+    parcel = Parcel.query.filter_by(tracking_number=tracking_number).first()
+    if not parcel:
+        return jsonify({"error": "Parcel not found"}), 404
 
-
+    return jsonify({
+        "id": parcel.id,
+        "tracking_number": parcel.tracking_number,
+        "destination": parcel.destination,
+        "status": parcel.status,
+        "size": parcel.size,
+        "weight": parcel.weight,
+        "arrival_date": parcel.arrival_date.isoformat() if parcel.arrival_date else None,
+        "location_rack": parcel.location_rack,
+        "metadata": parcel.metadata if isinstance(parcel.metadata, dict) else {}
+    })
 # --- Health route ---
 @app.route('/api/health')
 def health():
